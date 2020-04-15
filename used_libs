@@ -1,11 +1,8 @@
 ld-linux-x86-64.so.2
-libLLVM.so.8
+libLLVM.so.9
 libc.so.6
 libdl.so.2
-libgcc_s.so.1
 libm.so.6
 libpthread.so.0
 libstdc++.so.6
-libtinfo.so.6
 libxml2.so.2
-libz3.so.4.8
