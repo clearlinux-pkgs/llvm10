@@ -7,7 +7,7 @@
 %define keepstatic 1
 Name     : llvm9
 Version  : 9.0.1
-Release  : 1
+Release  : 2
 URL      : https://github.com/llvm/llvm-project/releases/download/llvmorg-9.0.1/llvm-9.0.1.src.tar.xz
 Source0  : https://github.com/llvm/llvm-project/releases/download/llvmorg-9.0.1/llvm-9.0.1.src.tar.xz
 Source1  : https://github.com/KhronosGroup/SPIRV-LLVM-Translator/archive/v9.0.0-1/SPIRV-9.0.0.1.tar.gz
@@ -23,7 +23,6 @@ Requires: llvm9-license = %{version}-%{release}
 Requires: llvm9-extras = %{version}-%{release}
 BuildRequires : Sphinx
 BuildRequires : Z3-dev
-BuildRequires : Z3-dev32
 BuildRequires : binutils-dev
 BuildRequires : buildreq-cmake
 BuildRequires : buildreq-distutils3
@@ -36,14 +35,12 @@ BuildRequires : googletest-dev
 BuildRequires : libffi-dev
 BuildRequires : libstdc++-dev
 BuildRequires : libxml2-dev
-BuildRequires : libxml2-dev32
 BuildRequires : llvm
 BuildRequires : ncurses-dev
 BuildRequires : python3-dev
 BuildRequires : subversion
 BuildRequires : valgrind-dev
 BuildRequires : zlib-dev
-BuildRequires : zlib-dev32
 Patch1: python2-shebangs.patch
 Patch2: llvm-0001-CMake-Split-static-library-exports-into-their-own-ex.patch
 Patch3: llvm-0002-Improve-physical-core-count-detection.patch
@@ -131,11 +128,56 @@ cp -r %{_builddir}/SPIRV-LLVM-Translator-9.0.0-1/* %{_builddir}/llvm-9.0.1.src/p
 %patch12 -p1
 
 %build
+## build_prepend content
+# Bootstrap the table generators
+# See https://build.opensuse.org/package/view_file/devel:tools:compiler/llvm10/llvm10.spec?expand=1
+mkdir clr-bootstrap-build
+pushd clr-bootstrap-build
+CFLAGS="`sed -E 's/-Wl,\S+\s//g; s/-Wp,-D_FORTIFY_SOURCE=2//' <<<$CFLAGS` -fno-integrated-as"
+CXXFLAGS="`sed -E 's/-Wl,\S+\s//g; s/-Wp,-D_FORTIFY_SOURCE=2//' <<<$CXXFLAGS` -fno-integrated-as"
+%cmake .. \
+-DCMAKE_BUILD_TYPE=Release \
+-DBUILD_SHARED_LIBS:BOOL=OFF \
+-DCMAKE_C_COMPILER=clang \
+-DCMAKE_C_FLAGS="$CFLAGS -g0" \
+-DCMAKE_CXX_COMPILER=clang++ \
+-DCMAKE_CXX_FLAGS="$CXXFLAGS -g0" \
+-DLLVM_BUILD_LLVM_DYLIB:BOOL=OFF \
+-DLLVM_LINK_LLVM_DYLIB:BOOL=OFF \
+-DLLVM_BUILD_TOOLS:BOOL=OFF \
+-DLLVM_BUILD_UTILS:BOOL=OFF \
+-DLLVM_BUILD_EXAMPLES:BOOL=OFF \
+-DLLVM_POLLY_BUILD:BOOL=OFF \
+-DLLVM_TOOL_CLANG_TOOLS_EXTRA_BUILD:BOOL=OFF \
+-DLLVM_INCLUDE_TESTS:BOOL=OFF \
+-DLLVM_ENABLE_ASSERTIONS=OFF \
+-DLLVM_TARGETS_TO_BUILD=Native \
+-DCLANG_ENABLE_ARCMT:BOOL=OFF \
+-DCLANG_ENABLE_STATIC_ANALYZER:BOOL=OFF \
+-DCOMPILER_RT_BUILD_SANITIZERS:BOOL=OFF \
+-DCOMPILER_RT_BUILD_XRAY:BOOL=OFF \
+-DLLDB_DISABLE_PYTHON=ON \
+-DCMAKE_SKIP_RPATH:BOOL=OFF \
+-DLLVM_LIBDIR_SUFFIX=64 \
+-DLLVM_BINUTILS_INCDIR=/usr/include \
+-DLLVM_HOST_TRIPLE="x86_64-generic-linux" \
+-DPYTHON_EXECUTABLE:FILEPATH=/usr/bin/python3
+make  %{?_smp_mflags}  VERBOSE=1 llvm-tblgen clang-tblgen
+popd
+
+#export PATH=/usr/lib64/ccache/bin/:${PWD}/clr-bootstrap-build/bin:${PATH}
+#export CC=${PWD}/clr-bootstrap-build/bin/clang
+#export CXX=${PWD}/clr-bootstrap-build/bin/clang++
+#export LLVM_AR=${PWD}/clr-bootstrap-build/bin/llvm-ar
+#export LLVM_RANLIB=${PWD}/clr-bootstrap-build/bin/llvm-ranlib
+export LLVM_TABLEGEN=${PWD}/clr-bootstrap-build/bin/llvm-tblgen
+export CLANG_TABLEGEN=${PWD}/clr-bootstrap-build/bin/clang-tblgen
+## build_prepend end
 export http_proxy=http://127.0.0.1:9/
 export https_proxy=http://127.0.0.1:9/
 export no_proxy=localhost,127.0.0.1,0.0.0.0
 export LANG=C.UTF-8
-export SOURCE_DATE_EPOCH=1586988110
+export SOURCE_DATE_EPOCH=1587419789
 unset LD_AS_NEEDED
 mkdir -p clr-build
 pushd clr-build
@@ -163,7 +205,7 @@ export CXXFLAGS="$CXXFLAGS -fno-lto "
 -DENABLE_LINKER_BUILD_ID=ON \
 -DBUILD_SHARED_LIBS:BOOL=OFF \
 -DLLVM_LINK_LLVM_DYLIB:BOOL=ON \
--DCLANG_BUILD_SHARED_LIBS:BOOL=ON \
+-DCLANG_BUILD_SHARED_LIBS:BOOL=OFF \
 -DLLVM_BUILD_RUNTIME:BOOL=ON \
 -DLLVM_BUILD_TOOLS:BOOL=ON \
 -DLLVM_ENABLE_CXX1Y=ON \
@@ -173,7 +215,8 @@ export CXXFLAGS="$CXXFLAGS -fno-lto "
 -DLLVM_ENABLE_ZLIB:BOOL=ON \
 -DLLVM_INSTALL_UTILS:BOOL=OFF \
 -DLLVM_REQUIRES_RTTI:BOOL=ON \
--DLLVM_TABLEGEN=/usr/bin/llvm-tblgen-9 \
+-DLLVM_TABLEGEN=$LLVM_TABLEGEN \
+-DCLANG_TABLEGEN=$CLANG_TABLEGEN \
 -DLLVM_LIBDIR_SUFFIX=64 \
 -DLLVM_BINUTILS_INCDIR=/usr/include \
 -DLLVM_HOST_TRIPLE="x86_64-generic-linux" \
@@ -181,7 +224,9 @@ export CXXFLAGS="$CXXFLAGS -fno-lto "
 -DCLANG_TOOL_SCAN_VIEW_BUILD:BOOL=OFF \
 -DCLANG_TOOL_SCAN_BUILD_BUILD:BOOL=OFF \
 -DLLVM_TOOL_OPT_VIEWER_BUILD:BOOL=OFF \
--DLLVM_INSTALL_UTILS:BOOL=OFF
+-DLLVM_INSTALL_UTILS:BOOL=OFF \
+-DCMAKE_C_COMPILER=clang-10 \
+-DCMAKE_CXX_COMPILER=clang++-10
 make  %{?_smp_mflags}  VERBOSE=1
 popd
 
@@ -193,7 +238,7 @@ export no_proxy=localhost,127.0.0.1,0.0.0.0
 make test
 
 %install
-export SOURCE_DATE_EPOCH=1586988110
+export SOURCE_DATE_EPOCH=1587419789
 rm -rf %{buildroot}
 mkdir -p %{buildroot}/usr/share/package-licenses/llvm9
 cp %{_builddir}/SPIRV-LLVM-Translator-9.0.0-1/LICENSE.TXT %{buildroot}/usr/share/package-licenses/llvm9/8f178caf2a2d6e6c711a30da69077572df356cf6
@@ -250,6 +295,9 @@ continue
 esac
 ln -s ../$f bin/${f##*/}-$VERSION
 done
+
+# libclang-cpp auto-relocates, so create a symlink so it finds its files
+ln -s ../.. lib64/clang/$FULL_VERSION/lib64
 
 # Put the LLVM gold plugin back, under the versioned name
 mv lib64/LLVMgold.so.save lib64/LLVMgold-$VERSION.so
@@ -389,6 +437,7 @@ popd
 /usr/lib64/clang/9.0.1/lib/linux/libclang_rt.xray-fdr-x86_64.a
 /usr/lib64/clang/9.0.1/lib/linux/libclang_rt.xray-profiling-x86_64.a
 /usr/lib64/clang/9.0.1/lib/linux/libclang_rt.xray-x86_64.a
+/usr/lib64/clang/9.0.1/lib64
 /usr/lib64/clang/9.0.1/share/asan_blacklist.txt
 /usr/lib64/clang/9.0.1/share/cfi_blacklist.txt
 /usr/lib64/clang/9.0.1/share/dfsan_abilist.txt
@@ -648,39 +697,6 @@ popd
 /usr/lib64/libRemarks.so.9
 /usr/lib64/libclang-cpp.so.9
 /usr/lib64/libclang.so.9
-/usr/lib64/libclangARCMigrate.so.9
-/usr/lib64/libclangAST.so.9
-/usr/lib64/libclangASTMatchers.so.9
-/usr/lib64/libclangAnalysis.so.9
-/usr/lib64/libclangBasic.so.9
-/usr/lib64/libclangCodeGen.so.9
-/usr/lib64/libclangCrossTU.so.9
-/usr/lib64/libclangDependencyScanning.so.9
-/usr/lib64/libclangDirectoryWatcher.so.9
-/usr/lib64/libclangDriver.so.9
-/usr/lib64/libclangDynamicASTMatchers.so.9
-/usr/lib64/libclangEdit.so.9
-/usr/lib64/libclangFormat.so.9
-/usr/lib64/libclangFrontend.so.9
-/usr/lib64/libclangFrontendTool.so.9
-/usr/lib64/libclangHandleCXX.so.9
-/usr/lib64/libclangHandleLLVM.so.9
-/usr/lib64/libclangIndex.so.9
-/usr/lib64/libclangLex.so.9
-/usr/lib64/libclangParse.so.9
-/usr/lib64/libclangRewrite.so.9
-/usr/lib64/libclangRewriteFrontend.so.9
-/usr/lib64/libclangSema.so.9
-/usr/lib64/libclangSerialization.so.9
-/usr/lib64/libclangStaticAnalyzerCheckers.so.9
-/usr/lib64/libclangStaticAnalyzerCore.so.9
-/usr/lib64/libclangStaticAnalyzerFrontend.so.9
-/usr/lib64/libclangTooling.so.9
-/usr/lib64/libclangToolingASTDiff.so.9
-/usr/lib64/libclangToolingCore.so.9
-/usr/lib64/libclangToolingInclusions.so.9
-/usr/lib64/libclangToolingRefactoring.so.9
-/usr/lib64/libclangToolingSyntax.so.9
 
 %files license
 %defattr(0644,root,root,0755)

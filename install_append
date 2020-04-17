@@ -30,6 +30,9 @@ for f in lib64/clang/$FULL_VERSION/bin/*; do
     ln -s ../$f bin/${f##*/}-$VERSION
 done
 
+# libclang-cpp auto-relocates, so create a symlink so it finds its files
+ln -s ../.. lib64/clang/$FULL_VERSION/lib64
+
 # Put the LLVM gold plugin back, under the versioned name
 mv lib64/LLVMgold.so.save lib64/LLVMgold-$VERSION.so
 mkdir -p lib/bfd-plugins
