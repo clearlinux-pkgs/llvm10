@@ -18,8 +18,8 @@ mv %{buildroot}/usr/package-licenses %{buildroot}/usr/share
 pushd %{buildroot}/usr
 FULL_VERSION=%{version}
 VERSION=${FULL_VERSION%%%%.*}
-mv bin lib64/clang/$FULL_VERSION
-mkdir bin
+mkdir -p lib64/clang/$FULL_VERSION/bin
+mv bin/* lib64/clang/$FULL_VERSION/bin
 for f in lib64/clang/$FULL_VERSION/bin/*; do
     case "$f" in
         *-$VERSION)

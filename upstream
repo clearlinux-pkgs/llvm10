@@ -1,4 +1,4 @@
-f7fcf3bd92d130784513c06efe6910f135372ce3/llvm-9.0.1.src.tar.xz
-0d72ce018c85c54fc709c7da71d3dd1463af0bfc/clang-9.0.1.src.tar.xz
-b35bc6ed7ce40f18ac45c81f4cf02ffd1f14de82/compiler-rt-9.0.1.src.tar.xz
-62c705d3dfde87a4c4daad5735415059ce128f59/SPIRV-9.0.0.1.tar.gz
+25d07260f3b7bf4f647e115c4a663fdeda130fbd/llvm-10.0.1.src.tar.xz
+0e61e92b22a620fe7f833fa8b2a56f2db96f7335/clang-10.0.1.src.tar.xz
+ee6077b4728b3c750e476938cead11cea45b49ff/compiler-rt-10.0.1.src.tar.xz
+5cf0641ec14cf49cd440d2364d1de666ba62f789/SPIRV-10.0.0.tar.gz

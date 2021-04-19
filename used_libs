@@ -1,5 +1,5 @@
 ld-linux-x86-64.so.2
-libLLVM.so.9
+libLLVM.so.10
 libc.so.6
 libdl.so.2
 libm.so.6
