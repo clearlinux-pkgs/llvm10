@@ -7,7 +7,7 @@
 %define keepstatic 1
 Name     : llvm10
 Version  : 10.0.1
-Release  : 1
+Release  : 2
 URL      : https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.1/llvm-10.0.1.src.tar.xz
 Source0  : https://github.com/llvm/llvm-project/releases/download/llvmorg-10.0.1/llvm-10.0.1.src.tar.xz
 Source1  : https://github.com/KhronosGroup/SPIRV-LLVM-Translator/archive/v10.0.0/SPIRV-10.0.0.tar.gz
@@ -195,7 +195,7 @@ export http_proxy=http://127.0.0.1:9/
 export https_proxy=http://127.0.0.1:9/
 export no_proxy=localhost,127.0.0.1,0.0.0.0
 export LANG=C.UTF-8
-export SOURCE_DATE_EPOCH=1618862664
+export SOURCE_DATE_EPOCH=1618878181
 unset LD_AS_NEEDED
 mkdir -p clr-build
 pushd clr-build
@@ -243,8 +243,8 @@ export CXXFLAGS="$CXXFLAGS -fno-lto "
 -DCLANG_TOOL_SCAN_BUILD_BUILD:BOOL=OFF \
 -DLLVM_TOOL_OPT_VIEWER_BUILD:BOOL=OFF \
 -DLLVM_INSTALL_UTILS:BOOL=OFF \
--DCMAKE_C_COMPILER=clang-10 \
--DCMAKE_CXX_COMPILER=clang++-10
+-DCMAKE_C_COMPILER=clang-11 \
+-DCMAKE_CXX_COMPILER=clang++-11
 make  %{?_smp_mflags}  VERBOSE=1
 popd
 
@@ -256,7 +256,7 @@ export no_proxy=localhost,127.0.0.1,0.0.0.0
 make test
 
 %install
-export SOURCE_DATE_EPOCH=1618862664
+export SOURCE_DATE_EPOCH=1618878181
 rm -rf %{buildroot}
 mkdir -p %{buildroot}/usr/share/package-licenses/llvm10
 cp %{_builddir}/SPIRV-LLVM-Translator-10.0.0/LICENSE.TXT %{buildroot}/usr/share/package-licenses/llvm10/8f178caf2a2d6e6c711a30da69077572df356cf6
